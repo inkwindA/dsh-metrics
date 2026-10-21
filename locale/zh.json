@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "指标看板",
+    "description": "像 W&B 一样在侧边栏实时查看训练 loss 与精度曲线，内置 agent 记录/导入工具，并提供一个零依赖的 Python 上报脚本。"
+  }
+}

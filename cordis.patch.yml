@@ -1,0 +1,5 @@
+- insert:
+    - id: dsh-metrics
+      name: '@inkwinda/dsh-metrics'
+      config:
+        maxPoints: 1500

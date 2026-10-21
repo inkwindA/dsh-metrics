@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Metrics Dashboard",
+    "description": "W&B-style live loss and accuracy curves in the sidebar, with agent tools to log or import runs and a dependency-free Python logger for training projects."
+  }
+}

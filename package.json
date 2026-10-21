@@ -1,0 +1,70 @@
+{
+  "name": "@inkwinda/dsh-metrics",
+  "version": "1.0.0",
+  "description": "W&B-style live training-curve dashboard for DeepSeek Harness, with agent tools and a dependency-free Python logger.",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "store.js",
+    "http.js",
+    "import.js",
+    "python/dsh_metrics.py",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "examples/*.py",
+    "examples/*.csv",
+    "docs/*.svg"
+  ],
+  "icon": "./icon.svg",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": []
+    }
+  },
+  "license": "MIT",
+  "author": "inkwindA",
+  "homepage": "https://github.com/inkwindA/dsh-metrics#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inkwindA/dsh-metrics.git"
+  },
+  "bugs": {
+    "url": "https://github.com/inkwindA/dsh-metrics/issues"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "metrics",
+    "training",
+    "visualization",
+    "wandb",
+    "loss",
+    "accuracy",
+    "dashboard"
+  ],
+  "scripts": {
+    "test": "node test/smoke.mjs",
+    "check": "node --check index.js && node --check client.js && node --check store.js && node --check http.js && node --check import.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
