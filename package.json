@@ -1,6 +1,6 @@
 {
   "name": "@inkwinda/dsh-metrics",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "W&B-style live training-curve dashboard for DeepSeek Harness, with agent tools and a dependency-free Python logger.",
   "type": "module",
   "exports": {

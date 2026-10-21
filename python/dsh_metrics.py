@@ -43,7 +43,7 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 __all__ = ["Run", "init", "log", "finish", "current_run", "data_dir"]
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 _HISTORY = "history.jsonl"
 _META = "run.json"

@@ -70,7 +70,7 @@ curl -s http://127.0.0.1:3080/dsh-metrics/api/state
 ```
 
 ```json
-{"version":"1.0.0","root":"/home/you/.dsh/metrics","runs":[]}
+{"version":"1.0.1","root":"/home/you/.dsh/metrics","runs":[]}
 ```
 
 ## 快速开始

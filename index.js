@@ -6,6 +6,7 @@
  * import a CSV/JSONL training log.
  */
 
+import { readFileSync } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -14,7 +15,7 @@ import { createMetricsHandler } from './http.js'
 import { parseMetricText } from './import.js'
 import { MetricsStore, downsample, toId } from './store.js'
 
-const VERSION = '1.0.0'
+const VERSION = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version
 const PLUGIN_NAME = 'dsh-metrics'
 
 /** Services required before apply runs. */
