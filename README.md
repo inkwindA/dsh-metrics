@@ -35,6 +35,8 @@ training loop ──► dsh_metrics.py ──► ~/.dsh/metrics/<project>/<run>/
   file and it keeps appending new epochs automatically.
 - **Compare runs.** Multi-select runs, one color per run, EMA smoothing slider,
   log-scale Y axis, hover readout, and a latest-values table with configs.
+- **Project-scoped views.** Filter the sidebar to one project, fold project
+  groups, and compare only the runs you pick. Nothing is selected on first open.
 - **Log from Python in three lines.** Standard library only; NaN/inf are skipped;
   every point is flushed so a crash does not lose the curve.
 - **Agent-native.** `metrics_log`, `metrics_import`, `metrics_list`, and
@@ -133,7 +135,7 @@ Open **Metrics** in the sidebar:
 
 | Area | What it does |
 |---|---|
-| Left column | Search, select, and delete runs, grouped by project. Live runs show `running`; finished ones show `finished`. |
+| Left column | Project filter, search, collapsible project groups, selection, and deletion. Live runs show `running`; finished ones show `finished`. No run is selected until you pick one. |
 | Charts | One SVG chart per metric. Hover for a crosshair readout; every selected run is overlaid in its own color. |
 | Toolbar | Metric filter, EMA smoothing, log Y, Live polling (3 s), manual refresh. |
 | Overview table | Latest value of every metric for each selected run, plus its config and step count. |

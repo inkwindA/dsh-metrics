@@ -6,6 +6,25 @@ window.__ModuleLoader__.load({
     const NS = 'dsh-metrics'
     const API = '/dsh-metrics/api'
     const COLORS = ['#4c8dff', '#f2a03d', '#4cc38a', '#e5646e', '#a78bfa', '#22b8cf', '#f472b6', '#eab308', '#94a3b8', '#0ea5e9']
+    const PREF_PROJECT = 'dsh-metrics:project'
+    const PREF_COLLAPSED = 'dsh-metrics:collapsed'
+
+    function readPref(key, fallback) {
+      try {
+        const raw = window.localStorage.getItem(key)
+        return raw === null ? fallback : JSON.parse(raw)
+      } catch {
+        return fallback
+      }
+    }
+
+    function writePref(key, value) {
+      try {
+        window.localStorage.setItem(key, JSON.stringify(value))
+      } catch {
+        // Preferences are optional; private modes may refuse storage.
+      }
+    }
 
     const zh = {
       'panel.title': '指标',
@@ -20,6 +39,13 @@ window.__ModuleLoader__.load({
       'runs.all': '全选',
       'runs.none': '清空',
       'runs.empty': '没有匹配的运行',
+      'runs.selected': '已选 {count}',
+      'project.filter': '按项目筛选',
+      'project.all': '全部项目（{count}）',
+      'group.expand': '展开 {name}',
+      'group.collapse': '折叠 {name}',
+      'page.selectTitle': '未选择运行',
+      'page.selectVisible': '选择当前运行',
       'run.delete': '删除运行 {name}',
       'run.confirm': '确认删除',
       'run.noData': '暂无数据',
@@ -68,6 +94,13 @@ window.__ModuleLoader__.load({
       'runs.all': 'All',
       'runs.none': 'None',
       'runs.empty': 'No matching runs',
+      'runs.selected': '{count} selected',
+      'project.filter': 'Filter by project',
+      'project.all': 'All projects ({count})',
+      'group.expand': 'Expand {name}',
+      'group.collapse': 'Collapse {name}',
+      'page.selectTitle': 'No runs selected',
+      'page.selectVisible': 'Select visible runs',
       'run.delete': 'Delete run {name}',
       'run.confirm': 'Confirm delete',
       'run.noData': 'no points',
@@ -135,13 +168,23 @@ window.__ModuleLoader__.load({
 .dmx-body{display:flex;flex:1;min-height:0}
 .dmx-side{width:280px;flex:none;min-height:0;display:flex;flex-direction:column;border-right:.5px solid var(--dsw-alias-border-l1)}
 .dmx-side-scroll{flex:1;min-height:0;overflow:auto;padding:12px 10px 18px;scrollbar-gutter:stable}
+.dmx-select{box-sizing:border-box;width:100%;height:32px;margin-bottom:8px;border-radius:10px;border:.5px solid var(--dsw-alias-border-l3,var(--dsw-alias-border-l2));background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;padding:0 8px;outline:none;cursor:pointer}
+.dmx-select:hover{border-color:var(--dsw-alias-border-l2)}
+.dmx-select:focus-visible{border-color:var(--dsw-alias-state-business-primary);outline:2px solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}
 .dmx-main{flex:1;min-width:0;min-height:0;overflow:auto;padding:16px clamp(16px,2.4vw,28px) 56px;scrollbar-gutter:stable}
 .dmx-input{box-sizing:border-box;width:100%;height:32px;border-radius:10px;border:.5px solid var(--dsw-alias-border-l3,var(--dsw-alias-border-l2));background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;padding:0 10px;outline:none}
 .dmx-input::placeholder{color:var(--dsw-alias-label-caption,var(--dsw-alias-label-tertiary))}
 .dmx-input:focus{border-color:var(--dsw-alias-state-business-primary)}
 .dmx-side-actions{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:8px 2px 2px}
-.dmx-group{padding-top:10px}
-.dmx-group-head{display:flex;align-items:center;gap:6px;padding:2px 6px 4px;font-size:11px;font-weight:500;letter-spacing:.03em;text-transform:uppercase;color:var(--dsw-alias-label-tertiary,var(--dsw-alias-label-secondary))}
+.dmx-group{padding-top:8px}
+.dmx-group-head{display:flex;align-items:center;gap:4px;padding:0 2px}
+.dmx-group-toggle{flex:1;min-width:0;display:flex;align-items:center;gap:6px;border:0;border-radius:8px;background:transparent;color:var(--dsw-alias-label-tertiary,var(--dsw-alias-label-secondary));font:inherit;font-size:11px;font-weight:500;letter-spacing:.03em;text-transform:uppercase;padding:4px 6px;cursor:pointer;text-align:left}
+.dmx-group-toggle:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.dmx-group-toggle:focus-visible{outline:2px solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}
+.dmx-chevron{flex:none;color:var(--dsw-alias-label-caption,var(--dsw-alias-label-tertiary));transition:transform .12s ease}
+.dmx-chevron[data-open=true]{transform:rotate(90deg)}
+.dmx-group-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dmx-group-count{margin-left:auto;color:var(--dsw-alias-label-caption,var(--dsw-alias-label-tertiary));font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;font-variant-numeric:tabular-nums}
 .dmx-run{display:flex;align-items:center;gap:2px;border-radius:10px}
 .dmx-run:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .dmx-run[data-on=true]{background:var(--dsw-alias-interactive-bg-hover)}
@@ -578,6 +621,14 @@ window.__ModuleLoader__.load({
       const [state, setState] = React.useState({ status: 'loading', runs: [], root: '', sdkUrl: '' })
       const [error, setError] = React.useState('')
       const [selected, setSelected] = React.useState(() => new Set())
+      const [projectFilter, setProjectFilter] = React.useState(() => {
+        const saved = readPref(PREF_PROJECT, 'all')
+        return typeof saved === 'string' && saved !== '' ? saved : 'all'
+      })
+      const [collapsed, setCollapsed] = React.useState(() => {
+        const saved = readPref(PREF_COLLAPSED, [])
+        return new Set(Array.isArray(saved) ? saved.filter((name) => typeof name === 'string') : [])
+      })
       const [details, setDetails] = React.useState({})
       const [live, setLive] = React.useState(true)
       const [smoothing, setSmoothing] = React.useState(0.35)
@@ -585,9 +636,11 @@ window.__ModuleLoader__.load({
       const [query, setQuery] = React.useState('')
       const [metricQuery, setMetricQuery] = React.useState('')
       const [armed, setArmed] = React.useState(null)
-      const autoPicked = React.useRef(false)
       const stateRef = React.useRef(state)
       stateRef.current = state
+
+      React.useEffect(() => { writePref(PREF_PROJECT, projectFilter) }, [projectFilter])
+      React.useEffect(() => { writePref(PREF_COLLAPSED, [...collapsed]) }, [collapsed])
 
       const loadState = React.useCallback(async () => {
         const payload = await fetch(`${API}/state`, { cache: 'no-store' }).then(async (response) => {
@@ -604,10 +657,6 @@ window.__ModuleLoader__.load({
         const runs = Array.isArray(payload.runs) ? payload.runs : []
         setState({ status: 'ready', runs, root: typeof payload.root === 'string' ? payload.root : '', sdkUrl: typeof payload.sdkUrl === 'string' ? payload.sdkUrl : '' })
         setError('')
-        if (!autoPicked.current && runs.length > 0) {
-          autoPicked.current = true
-          setSelected(new Set(runs.slice(0, 4).map((run) => run.key)))
-        }
       }, [])
 
       React.useEffect(() => {
@@ -672,19 +721,37 @@ window.__ModuleLoader__.load({
         return map
       }, [state.runs])
 
+      const projects = React.useMemo(() => {
+        const map = new Map()
+        for (const run of state.runs) {
+          const entry = map.get(run.project) ?? { name: run.project, count: 0, updated: 0 }
+          entry.count += 1
+          if (run.updated > entry.updated) entry.updated = run.updated
+          map.set(run.project, entry)
+        }
+        return [...map.values()].sort((left, right) => right.updated - left.updated)
+      }, [state.runs])
+
+      const activeProject = projectFilter === 'all' || projects.some((project) => project.name === projectFilter) ? projectFilter : 'all'
+
+      React.useEffect(() => {
+        if (activeProject !== projectFilter) setProjectFilter(activeProject)
+      }, [activeProject, projectFilter])
+
       const selectedRuns = React.useMemo(
-        () => state.runs.filter((run) => selected.has(run.key)),
-        [state.runs, selected],
+        () => state.runs.filter((run) => selected.has(run.key) && (activeProject === 'all' || run.project === activeProject)),
+        [state.runs, selected, activeProject],
       )
 
       const filtered = React.useMemo(() => {
         const needle = query.trim().toLowerCase()
-        if (needle === '') return state.runs
         return state.runs.filter((run) => {
+          if (activeProject !== 'all' && run.project !== activeProject) return false
+          if (needle === '') return true
           const haystack = `${run.project} ${run.name} ${run.tags.join(' ')} ${JSON.stringify(run.config)}`.toLowerCase()
           return haystack.includes(needle)
         })
-      }, [state.runs, query])
+      }, [state.runs, query, activeProject])
 
       const groups = React.useMemo(() => {
         const map = new Map()
@@ -755,6 +822,18 @@ window.__ModuleLoader__.load({
 
       const sidebar = h('aside', { className: 'dmx-side' },
         h('div', { className: 'dmx-side-scroll' },
+          h('select', {
+            className: 'dmx-select',
+            value: activeProject,
+            onChange: (event) => {
+              setProjectFilter(event.target.value)
+              setCollapsed(new Set())
+            },
+            'aria-label': t('project.filter'),
+            title: t('project.filter'),
+          },
+          h('option', { value: 'all' }, t('project.all', { count: state.runs.length })),
+          projects.map((project) => h('option', { value: project.name, key: project.name }, `${project.name} · ${project.count}`))),
           h('input', {
             className: 'dmx-input',
             type: 'search',
@@ -764,15 +843,32 @@ window.__ModuleLoader__.load({
             'aria-label': t('search.placeholder'),
           }),
           h('div', { className: 'dmx-side-actions' },
-            h('span', { className: 'dmx-path' }, t('page.runs', { count: state.runs.length })),
+            h('span', { className: 'dmx-path' }, t('page.runs', { count: filtered.length })),
             h('span', { style: { display: 'inline-flex', gap: 2 } },
               h('button', { type: 'button', className: 'dmx-btn', onClick: selectAll }, t('runs.all')),
               h('button', { type: 'button', className: 'dmx-btn', onClick: selectNone }, t('runs.none')))),
           groups.length === 0
             ? h('div', { className: 'dmx-path', style: { padding: '14px 6px' } }, state.status === 'loading' ? t('page.loading') : t('runs.empty'))
-            : groups.map(([project, runs]) => h('div', { className: 'dmx-group', key: project },
-              h('div', { className: 'dmx-group-head' }, project),
-              runs.map((run) => {
+            : groups.map(([project, runs]) => {
+              const isCollapsed = collapsed.has(project)
+              return h('div', { className: 'dmx-group', key: project },
+                h('div', { className: 'dmx-group-head' },
+                  h('button', {
+                    type: 'button',
+                    className: 'dmx-group-toggle',
+                    'aria-expanded': !isCollapsed,
+                    title: t(isCollapsed ? 'group.expand' : 'group.collapse', { name: project }),
+                    onClick: () => setCollapsed((previous) => {
+                      const next = new Set(previous)
+                      if (next.has(project)) next.delete(project)
+                      else next.add(project)
+                      return next
+                    }),
+                  },
+                  h(Chevron, { open: !isCollapsed }),
+                  h('span', { className: 'dmx-group-name' }, project),
+                  h('span', { className: 'dmx-group-count' }, runs.length))),
+                isCollapsed ? null : runs.map((run) => {
                 const on = selected.has(run.key)
                 const color = colors[run.key] || COLORS[0]
                 const isArmed = armed === run.key
@@ -805,7 +901,8 @@ window.__ModuleLoader__.load({
                       }
                     },
                   }, isArmed ? t('run.confirm') : '✕'))
-              })))
+                }))
+            })
         ),
         h('details', { className: 'dmx-sdk' },
           h('summary', null, t('sdk.title')),
@@ -824,7 +921,11 @@ window.__ModuleLoader__.load({
           h('div', { className: 'dmx-path' }, `${t('empty.dir')}: ${state.root || '—'}`),
           h('p', { className: 'dmx-path' }, t('empty.hint')))
       } else if (selectedRuns.length === 0) {
-        main = h('div', { className: 'dmx-empty' }, h('h2', null, t('page.title')), h('p', null, t('page.selectHint')))
+        main = h('div', { className: 'dmx-empty' },
+          h('div', { className: 'dmx-empty-glyph' }, h(ChartGlyph, { size: 40 })),
+          h('h2', null, t('page.selectTitle')),
+          h('p', null, t('page.selectHint')),
+          h('button', { type: 'button', className: 'dmx-btn', onClick: selectAll }, t('page.selectVisible')))
       } else {
         main = h(React.Fragment, null,
           h('div', { className: 'dmx-grid' },
@@ -862,7 +963,7 @@ window.__ModuleLoader__.load({
             h('h1', null, t('page.title')),
             h('span', { className: 'dmx-sub', title: state.root },
               state.status === 'ready'
-                ? `${t('page.runs', { count: state.runs.length })}${state.root === '' ? '' : ` · ${state.root}`}`
+                ? `${t('page.runs', { count: state.runs.length })}${selectedRuns.length > 0 ? ` · ${t('runs.selected', { count: selectedRuns.length })}` : ''}${state.root === '' ? '' : ` · ${state.root}`}`
                 : t('page.loading'))),
           h('div', { className: 'dmx-controls' },
             hasRuns ? h('input', {
@@ -931,6 +1032,24 @@ window.__ModuleLoader__.load({
       h('path', { d: 'M20 39 L29 31 L37 35 L47 20', stroke: 'var(--dsw-alias-brand-primary)', strokeWidth: 3.5, strokeLinecap: 'round', strokeLinejoin: 'round' }),
       h('circle', { cx: 20, cy: 39, r: 2.6, fill: 'var(--dsw-alias-brand-primary)' }),
       h('circle', { cx: 47, cy: 20, r: 2.6, fill: 'var(--dsw-alias-brand-primary)' }))
+    }
+
+    function Chevron({ open }) {
+      return h('svg', {
+        className: 'dmx-chevron',
+        'data-open': open,
+        width: 10,
+        height: 10,
+        viewBox: '0 0 12 12',
+        fill: 'none',
+        'aria-hidden': true,
+      }, h('path', {
+        d: 'M4 2 L8 6 L4 10',
+        stroke: 'currentColor',
+        strokeWidth: 1.8,
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round',
+      }))
     }
 
     function PanelIcon({ size }) {
